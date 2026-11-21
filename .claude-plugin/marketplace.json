@@ -1,0 +1,12 @@
+{
+  "name": "dotfactory",
+  "description": "The dotfactory plugin for Claude Code.",
+  "owner": { "name": "Gianluca Esposito", "url": "https://github.com/gesposito" },
+  "plugins": [
+    {
+      "name": "dotfactory",
+      "source": "./plugin",
+      "description": "A personal project factory for Claude Code. Loads your preferences into every session, tells sessions about the tools and expert sessions you can call on, and starts new projects the way you like them."
+    }
+  ]
+}

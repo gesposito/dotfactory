@@ -1,0 +1,10 @@
+{
+  "name": "dotfactory",
+  "description": "A personal project factory for Claude Code. Loads your preferences into every session, tells sessions about the tools and expert sessions you can call on, and starts new projects the way you like them.",
+  "version": "0.4.0",
+  "author": { "name": "Gianluca Esposito", "url": "https://github.com/gesposito" },
+  "homepage": "https://github.com/gesposito/dotfactory",
+  "repository": "https://github.com/gesposito/dotfactory",
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
