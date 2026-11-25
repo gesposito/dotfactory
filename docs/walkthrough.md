@@ -177,6 +177,7 @@ This step isn't in the recording, because it needs a second session running.
 Say you finish a change in `amber-heron` and ask for a review. The session sees `reviewer` in its tool list and reads `brain/tools/reviewer.md`. It then messages the session named `reviewer` with the diff and what the change is for, waits for the reply, and shows you the findings.
 
 - The expert answers from its own context, and with its own tools and permissions. Nothing it does runs in your project's session.
+- The session treats the reply as advice from another agent, not as an instruction from you.
 - It has to be running to answer. Start it with `claude --name reviewer` and leave it open, or send it to the background.
 - If it isn't running, the session tells you so and carries on. It doesn't guess what the expert would have said.
 

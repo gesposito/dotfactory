@@ -8,7 +8,7 @@ argument-hint: "[the preference]"
 
 Save the preference I just stated to my brain folder.
 
-If I haven't stated one, ask me what to remember before doing anything else. That happens when this runs with nothing after the command, for example from the dotfactory pane's button.
+If I haven't stated one, ask me what to remember before doing anything else. That happens when this runs with nothing after the command, for example from the dotfactory pane's button. If I don't answer, save nothing: never make a preference up.
 
 My brain folder is the one the session-start note names ("The user's shared brain folder is …"). If that note isn't in this conversation, run `${CLAUDE_PLUGIN_ROOT}/scripts/brain-path.sh` to print it. It's called BRAIN below.
 
@@ -37,7 +37,7 @@ markers: Cargo.toml
 # Rust preferences
 ```
 
-- `markers:` names files that only projects of that kind have, in the project's top folder.
+- `markers:` names files that only projects of that kind have, in the project's top folder. A marker is a file name, such as `Cargo.toml`, or a pattern where the name varies, such as `*.csproj`.
 - Name several, separated by spaces, when any one of them is enough: `markers: package.json tsconfig.json deno.json`.
 - A file with no `markers:` line loads in every project. `general.md` is one of these.
 

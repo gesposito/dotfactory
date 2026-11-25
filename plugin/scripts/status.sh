@@ -31,8 +31,10 @@ for file in "$brain"/prefs/*.md; do
   else
     echo "  $name: empty, $where"
   fi
-  if [ "$(body "$file" | wc -c | tr -d ' ')" -gt "$PREFS_BUDGET" ]; then
-    echo "  PROBLEM: $name.md is over $PREFS_BUDGET bytes, so sessions only see the start of it. Shorten it."
+  # Measured as the hook measures it: see the budgets in lib.sh.
+  text=$(body "$file")
+  if [ "${#text}" -gt "$PREFS_BUDGET" ]; then
+    echo "  PROBLEM: $name.md is longer than the $PREFS_BUDGET characters a session can load, so sessions only see the start of it. Shorten it."
   fi
 done
 [ "$count" -eq 0 ] && echo "  none saved (add one with /dotfactory:remember)"

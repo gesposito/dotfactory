@@ -23,7 +23,7 @@ You need three things. Ask only for the ones you can't tell from what I said, in
 Read the files in `BRAIN/prefs/` that apply to this project. The session-start note can't have loaded them for a folder that is still empty.
 
 - A file with no `markers:` line at its top applies to every project.
-- A file with a `markers:` line applies when the project will contain one of the files it names. For example, `markers: Cargo.toml` applies to a Rust project.
+- A file with a `markers:` line applies when the project will contain a file that matches one of them. A marker is a file name or a pattern: `markers: Cargo.toml` applies to a Rust project, and `markers: *.csproj` to a .NET one.
 
 Follow them for every choice below. Where they say nothing about a choice you have to make, use the ecosystem's usual default and note which default you picked, so I can correct it.
 

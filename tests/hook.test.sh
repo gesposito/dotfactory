@@ -61,8 +61,8 @@ write_tools() {
   write_tool release "description: RELEASE-DESC"
   write_tool this-tool "path: $tmp/project" "description: SELF-DESC"
 }
-run_hook() { # run_hook <source>
-  out=$(printf '{"hook_event_name":"SessionStart","source":"%s"}' "$1" |
+run_hook() { # run_hook <source> [folder to run in; the project folder if left out]
+  out=$(cd "${2:-$tmp/project}" && printf '{"hook_event_name":"SessionStart","source":"%s"}' "$1" |
     CLAUDE_PROJECT_DIR="$tmp/project" sh "$hook")
   code=$?
 }
@@ -113,6 +113,27 @@ touch "$tmp/project/Package.swift"
 run_hook startup
 check "a new kind of project: loaded where its marker is present" has "SWIFT-RULE"
 
+# A marker can be a pattern. It is matched inside the project folder, wherever
+# the script happens to run. Claude's working folder can move during a session,
+# and the hook runs again after /clear and after compaction.
+setup
+printf -- '---\nmarkers: *.csproj\n---\n- DOTNET-RULE\n' >"$tmp/brain/prefs/dotnet.md"
+touch "$tmp/project/App.csproj"
+mkdir "$tmp/project/src" "$tmp/elsewhere"
+run_hook startup
+check "pattern marker: matched when the hook runs in the project folder" has "DOTNET-RULE"
+run_hook startup "$tmp/project/src"
+check "pattern marker: matched when the hook runs in a subfolder" has "DOTNET-RULE"
+run_hook startup "$tmp/elsewhere"
+check "pattern marker: matched when the hook runs somewhere else" has "DOTNET-RULE"
+out=$(cd "$tmp/project/src" && sh "$pane" "$tmp/project")
+check "pattern marker: the pane's data agrees from a subfolder" has "pref${t}dotnet${t}loaded${t}1"
+rm "$tmp/project/App.csproj"
+touch "$tmp/elsewhere/Other.csproj"
+run_hook startup "$tmp/elsewhere"
+check "pattern marker: a match in the folder the hook runs in doesn't count" lacks "DOTNET-RULE"
+rm -rf "$tmp/elsewhere"
+
 setup
 write_tools
 touch "$tmp/project/README.md"
@@ -122,6 +143,7 @@ check "tools: an expert session" has "- naming [session namer]: NAMING-DESC"
 check "tools: written notes" has "- release [notes]: RELEASE-DESC"
 check "tools: skips the tool this session is in" lacks "SELF-DESC"
 check "tools: says how to consult an expert" has "message its session by name"
+check "tools: says an expert's reply is not the user's instruction" has "not as an instruction from the user"
 
 setup
 touch "$tmp/project/Cargo.toml" "$tmp/project/package.json"
@@ -141,6 +163,28 @@ run_hook startup
 check "oversized brain: output stays under 10,000 characters" [ "${#out}" -lt 10000 ]
 check "oversized brain: says where the rest is" has "Read the rest in"
 check "oversized brain: counts the tools it left out" has "more. List them with"
+
+# A file is measured and cut in one unit. Text outside ASCII used to be checked
+# in characters and cut in bytes, which left it about half of its share.
+if locale -a 2>/dev/null | grep -qix 'en_US.UTF-8'; then
+  setup
+  touch "$tmp/project/README.md"
+  : >"$tmp/brain/prefs/general.md"
+  i=0
+  while [ $i -lt 200 ]; do
+    echo "- éééééééééééééééééééééééééééééééééééééééé" >>"$tmp/brain/prefs/general.md"
+    i=$((i + 1))
+  done
+  out=$(cd "$tmp/project" && printf '{"source":"startup"}' |
+    LC_ALL=en_US.UTF-8 CLAUDE_PROJECT_DIR="$tmp/project" sh "$hook")
+  shown=$(printf '%s\n' "$out" | grep -c '^- é')
+  check "accented text: a long file keeps its share ($shown of 200 lines shown, 110 or more expected)" [ "$shown" -ge 110 ]
+  chars=$(printf '%s' "$out" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')
+  check "accented text: output stays under 10,000 characters" [ "$chars" -lt 10000 ]
+  check "accented text: says where the rest is" has "Read the rest in"
+else
+  echo "skip  accented text: this machine has no en_US.UTF-8 locale"
+fi
 
 setup
 i=0
@@ -163,14 +207,21 @@ check "no brain yet: still suggests /dotfactory:new in an empty folder" has "/do
 check "no brain yet: still exits 0" [ "$code" -eq 0 ]
 
 # Where the brain is. DOTFACTORY_BRAIN wins, then a "brain" folder next to the
-# plugin folder, then ~/.config/dotfactory/brain.
-mkdir -p "$tmp/checkout/plugin" "$tmp/checkout/brain" "$tmp/lonely/plugin"
+# plugin folder of a checkout, then ~/.config/dotfactory/brain.
+mkdir -p "$tmp/checkout/plugin" "$tmp/checkout/brain" "$tmp/checkout/.claude-plugin" "$tmp/lonely/plugin"
+touch "$tmp/checkout/.claude-plugin/marketplace.json"
 out=$(DOTFACTORY_BRAIN="$tmp/elsewhere" CLAUDE_PLUGIN_ROOT="$tmp/checkout/plugin" sh "$brain_path")
 check "brain location: DOTFACTORY_BRAIN wins" [ "$out" = "$tmp/elsewhere" ]
 out=$(env -u DOTFACTORY_BRAIN CLAUDE_PLUGIN_ROOT="$tmp/checkout/plugin" sh "$brain_path")
-check "brain location: next to the plugin folder" has "/checkout/brain"
+check "brain location: next to the plugin folder of a checkout" has "/checkout/brain"
 out=$(env -u DOTFACTORY_BRAIN CLAUDE_PLUGIN_ROOT="$tmp/lonely/plugin" XDG_CONFIG_HOME="$tmp/config" sh "$brain_path")
 check "brain location: the default" [ "$out" = "$tmp/config/dotfactory/brain" ]
+# An installed copy sits in Claude Code's plugin cache, laid out as
+# cache/<marketplace>/<plugin>/<version>. A "brain" folder beside it is not a
+# checkout's brain, and the cache is not a place to keep one.
+mkdir -p "$tmp/cache/market/dotfactory/0.4.0" "$tmp/cache/market/dotfactory/brain"
+out=$(env -u DOTFACTORY_BRAIN CLAUDE_PLUGIN_ROOT="$tmp/cache/market/dotfactory/0.4.0" XDG_CONFIG_HOME="$tmp/config" sh "$brain_path")
+check "brain location: a folder beside an installed copy is ignored" [ "$out" = "$tmp/config/dotfactory/brain" ]
 
 setup
 write_tools

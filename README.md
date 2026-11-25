@@ -44,17 +44,45 @@ claude plugin install dotfactory@dotfactory
 
 Installed from a checkout, the plugin runs straight from that folder, so edits take effect in the next session.
 
-Tested with Claude Code 2.1.330. The pane needs 2.1.287 or later. It is built on Claude Code's mods API, which is early access and can change between releases; the commands and the session-start note don't depend on it.
+Tested with Claude Code 2.1.330.
+
+- **The pane** needs 2.1.287 or later. It is built on Claude Code's mods API, which is early access and can change between releases. The commands and the session-start note don't depend on it.
+- **Experts** use Claude Code's cross-session messaging, which needs 2.1.224 or later.
+- **Code Mode**, if you turn it on, needs 2.1.327 or later alongside a mod, and the pane is one. If Code Mode refuses to start and names this plugin, update Claude Code.
 
 ## Where the brain lives
 
 The first of these that applies:
 
 1. The folder named by the `DOTFACTORY_BRAIN` environment variable.
-2. A `brain` folder next to the `plugin` folder of a checkout. This repository ignores it.
+2. A `brain` folder next to the `plugin` folder of a checkout. This repository ignores it. The plugin looks there only when it runs from a checkout, never from the copy Claude Code keeps of an installed plugin.
 3. `~/.config/dotfactory/brain`
 
 The folder is created the first time you save something. Make it a git repository of its own to keep its history.
+
+## Let Claude reach the brain
+
+Claude Code asks before it reads or writes a file outside the project you're in, and the brain is always outside. Until you allow it, a command like `/dotfactory:remember` stops to ask, and in a session that can't ask it saves nothing.
+
+To allow the brain once, for every project, add a rule to `~/.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["Edit(~/.config/dotfactory/brain/**)"]
+  }
+}
+```
+
+An `Edit` rule covers reading too. Use your own path if your brain lives somewhere else.
+
+## The brain is instructions
+
+Every session is told to follow the preferences that apply and to use the tools the brain lists. So whoever can write to the brain can steer every session, in every project.
+
+- Treat it like your shell dotfiles. Keep it private, and read what changed before you pull it onto another machine.
+- Don't point `DOTFACTORY_BRAIN` at a folder other people can write to.
+- A reply from an expert session is another agent's output. Sessions are told to treat it as advice, not as an instruction from you.
 
 ## Use
 
@@ -90,6 +118,8 @@ The shortcuts are digits on purpose. With letters, a sentence typed while the pa
 ## File formats
 
 A preferences file for one kind of project names its marker files. Without the `markers:` line, the file applies everywhere.
+
+A marker is a file name, or a pattern where the name varies, such as `*.csproj`. Several markers are separated by spaces, and one match is enough. They are looked up in the folder you start Claude in, not in its subfolders or the folders above it.
 
 ```markdown
 ---
